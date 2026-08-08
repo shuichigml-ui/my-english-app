@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>英単語学習アプリ (100語全データ)</title>
+  <title>英単語学習アプリ</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -74,7 +74,6 @@
   </div>
 
   <script>
-    // PDFから抽出した全100語のデータ
     const wordList = [
       { en: "one", ja: "1つの、1人の" },
       { en: "the", ja: "その" },
@@ -180,22 +179,38 @@
 
     let currentTimeout = null;
     let isRunning = false;
+    let englishVoice = null;
 
-    // 英語を読み上げる関数 (Web Speech API)
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        const voices = window.speechSynthesis.getVoices();
+        englishVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
+      }
+    }
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
+
     function speak(text) {
-      window.speechSynthesis.cancel(); // 前の発音をクリア
+      if (!('speechSynthesis' in window) || !text) return;
+      
+      window.speechSynthesis.cancel();
       const uttr = new SpeechSynthesisUtterance(text);
       uttr.lang = 'en-US';
-      uttr.rate = 0.9; // 読み上げスピード
+      uttr.rate = 0.9;
+      if (englishVoice) uttr.voice = englishVoice;
+      
       window.speechSynthesis.speak(uttr);
     }
 
-    // ランダム要素の取得
     function getRandomItem(array) {
       return array[Math.floor(Math.random() * array.length)];
     }
 
     function startApp() {
+      speak("hello"); // 初回音声ロック解除用
       document.getElementById("startBtn").style.display = "none";
       isRunning = true;
       nextQuestion();
@@ -211,32 +226,25 @@
       secondaryEl.textContent = "";
 
       const item = getRandomItem(wordList);
-      // (1) 英?日 または (2) 日?英 をランダム選択
       const mode = Math.random() < 0.5 ? 1 : 2;
 
       if (mode === 1) {
-        // パターン(1): 英単語表示 -> 2秒後に発音と日本語
-        modeEl.textContent = "英 ? 日";
+        modeEl.textContent = "英 ➔ 日";
         primaryEl.textContent = item.en;
 
         currentTimeout = setTimeout(() => {
           speak(item.en);
           secondaryEl.textContent = item.ja;
-
-          // 3秒後に次の単語へ
           currentTimeout = setTimeout(nextQuestion, 3000);
         }, 2000);
 
       } else {
-        // パターン(2): 日本語表示 -> 2秒後に英単語と発音
-        modeEl.textContent = "日 ? 英";
+        modeEl.textContent = "日 ➔ 英";
         primaryEl.textContent = item.ja;
 
         currentTimeout = setTimeout(() => {
           secondaryEl.textContent = item.en;
           speak(item.en);
-
-          // 3秒後に次の単語へ
           currentTimeout = setTimeout(nextQuestion, 3000);
         }, 2000);
       }
