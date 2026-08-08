@@ -76,7 +76,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.0.8</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.0.9</div>
     <div id="secondary" class="secondary-text"></div>
     <div class="btn-group">
       <button id="startBtn" onclick="startApp()">学習を開始する</button>
@@ -191,7 +191,7 @@
     let currentTimeout = null;
     let spellTimeouts = [];
 
-    // タイマーと非同期再生のクリア処理
+    // タイマーと音声のクリア処理
     function clearAllTimers() {
       if (currentTimeout) {
         clearTimeout(currentTimeout);
@@ -210,19 +210,17 @@
     }
 
     // アルファベット1文字の発声用関数
-    function speakLetter(char, callback) {
+    function speakLetter(char) {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(char);
         utterance.lang = 'en-US';
         utterance.rate = 1.0;
-        if (callback) utterance.onend = callback;
         window.speechSynthesis.speak(utterance);
       }
     }
 
-    // アルファベットを1文字ずつ「0.5秒（500ms）」空けて読み上げ ➔ 最後に全体発音
+    // アルファベットを1文字ずつ「0.5秒（500ms）」空けて読み上げ ➔ 0.5秒待ってから全体発音
     function spellAndSpeak(word) {
-      // 記号やスペースを除いたアルファベット文字だけ抽出
       const cleanWord = word.replace(/[^a-zA-Z]/g, '');
       const letters = cleanWord.split('');
 
@@ -230,11 +228,11 @@
         window.speechSynthesis.cancel();
 
         letters.forEach((letter, index) => {
-          // 1文字あたり0.5秒 (500ms) ごとにずらして発声指示を入れる
+          // 1文字あたり0.5秒 (500ms) ごとにずらして読み上げ
           const t = setTimeout(() => {
             speakLetter(letter);
 
-            // 最後の文字を読み上げ終わった0.5秒後に全体単語を発音
+            // 最後の1文字を読み上げた後、さらに0.5秒待ってから全体の単語を発音
             if (index === letters.length - 1) {
               const finalT = setTimeout(() => {
                 speakWord(word);
@@ -247,12 +245,11 @@
         });
 
       } else {
-        // 音声合成非対応環境の場合のバックアップ再生
         speakWord(word);
       }
     }
 
-    // フォールバック付き音声再生（音が出ない環境用対策を維持）
+    // フォールバック付き音声再生
     function playAudioWithFallback(text) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -286,7 +283,6 @@
     }
 
     function startApp() {
-      // Chrome OS / Mobile のオーディオ再生ブロック解除
       if ('speechSynthesis' in window) {
         window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
       }
@@ -309,7 +305,7 @@
       const mode = Math.random() < 0.5 ? 1 : 2;
 
       if (mode === 1) {
-        // パターン(1): 英 ➔ 日 (2秒待機後、単語発音 ＋ 日本語表示)
+        // パターン(1): 英 ➔ 日
         modeEl.textContent = "英 ➔ 日";
         primaryEl.textContent = item.en;
 
@@ -319,9 +315,11 @@
         }, 2000);
 
       } else {
-        // パターン(2): 日 ➔ 英 (7秒待機後、単語表示 ＋ 0.5秒おきに1文字ずつスペル読み上げ ➔ 全体発音)
+        // パターン(2): 日 ➔ 英
         modeEl.textContent = "日 ➔ 英";
         primaryEl.textContent = item.ja;
+        // 7秒間の思考時間中は「単語を書いて」と表示
+        secondaryEl.textContent = "単語を書いて";
 
         currentTimeout = setTimeout(() => {
           secondaryEl.textContent = item.en;
