@@ -68,7 +68,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語) Ver.0.5</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語) Ver.0.6</div>
     <div id="secondary" class="secondary-text"></div>
     <button id="startBtn" onclick="startApp()">学習を開始する</button>
   </div>
@@ -179,21 +179,46 @@
 
     let currentTimeout = null;
     let isRunning = false;
-    const synth = window.speechSynthesis;
 
-    // 音声を確実に発声させる関数
+    // 音声再生関数（Web Speech API が空振る環境用 フォールバック機能付き）
     function speak(text) {
-      if (!synth) return;
+      if (!text) return;
+
+      // 1. Web Speech API (ブラウザ標準)
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.9;
+
+        // 音声が正しくスタートしない場合（Chrome OS Flex 等）のフォールバック処理
+        let spoken = false;
+        utterance.onstart = () => { spoken = true; };
+
+        window.speechSynthesis.speak(utterance);
+
+        // 300ms 経っても再生が開始されない場合はフォールバック音声 (VoiceRSS Open Speech API) を試行
+        setTimeout(() => {
+          if (!spoken) {
+            playFallbackAudio(text);
+          }
+        }, 300);
+      } else {
+        playFallbackAudio(text);
+      }
+    }
+
+    // 外部のフリー音声API (Chrome OS Flex 等でブラウザ音声がない時の代替)
+    function playFallbackAudio(text) {
+      const audioUrl = `https://api.dictionaryapi.dev/media/pronunciations/en/${encodeURIComponent(text.toLowerCase())}-us.mp3`;
+      const fallbackUrl = `https://ssl.gstatic.com/dictionary/static/sounds/20200429/${encodeURIComponent(text.toLowerCase())}--_us_1.mp3`;
       
-      // キューに入っている発音をキャンセル
-      synth.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9; // 読み上げスピード
-
-      // スマホ（Android Chrome）向けのバグ対策: 無音で停止する問題の回避
-      synth.speak(utterance);
+      const audio = new Audio(fallbackUrl);
+      audio.play().catch(e => {
+        // バックアップ2
+        const audio2 = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&type=2`);
+        audio2.play().catch(() => console.log("音声再生に対応していません"));
+      });
     }
 
     function getRandomItem(array) {
@@ -201,10 +226,9 @@
     }
 
     function startApp() {
-      // Androidのオーディオ制限を解除するため、ユーザーがボタンを押した直後に一回空読み上げを行う
-      if (synth) {
-        const dummyUtterance = new SpeechSynthesisUtterance("");
-        synth.speak(dummyUtterance);
+      // Chrome OS / Mobile のオーディオ再生ブロックの解除
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
       }
 
       document.getElementById("startBtn").style.display = "none";
