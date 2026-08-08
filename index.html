@@ -179,13 +179,14 @@
 
     let currentTimeout = null;
     let isRunning = false;
+    // 使い回すAudio要素を事前生成
+    const audioPlayer = new Audio();
 
-    // Google翻訳の音声API（Audioオブジェクト）を利用して再生
     function speak(text) {
       if (!text) return;
       const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`;
-      const audio = new Audio(url);
-      audio.play().catch(e => console.log("音声再生エラー:", e));
+      audioPlayer.src = url;
+      audioPlayer.play().catch(e => console.log("再生エラー:", e));
     }
 
     function getRandomItem(array) {
@@ -193,9 +194,18 @@
     }
 
     function startApp() {
-      document.getElementById("startBtn").style.display = "none";
-      isRunning = true;
-      nextQuestion();
+      // ボタンタップのタイミングで空音声(ダミー)を再生し、スマホのオーディオ再生制限を解除する
+      audioPlayer.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+      audioPlayer.play().then(() => {
+        document.getElementById("startBtn").style.display = "none";
+        isRunning = true;
+        nextQuestion();
+      }).catch(e => {
+        // 解除失敗時も学習をスタート
+        document.getElementById("startBtn").style.display = "none";
+        isRunning = true;
+        nextQuestion();
+      });
     }
 
     function nextQuestion() {
