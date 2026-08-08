@@ -179,30 +179,13 @@
 
     let currentTimeout = null;
     let isRunning = false;
-    let englishVoice = null;
 
-    function loadVoices() {
-      if ('speechSynthesis' in window) {
-        const voices = window.speechSynthesis.getVoices();
-        englishVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.startsWith('en'));
-      }
-    }
-
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
-      loadVoices();
-    }
-
+    // Google翻訳の音声API（Audioオブジェクト）を利用して再生
     function speak(text) {
-      if (!('speechSynthesis' in window) || !text) return;
-      
-      window.speechSynthesis.cancel();
-      const uttr = new SpeechSynthesisUtterance(text);
-      uttr.lang = 'en-US';
-      uttr.rate = 0.9;
-      if (englishVoice) uttr.voice = englishVoice;
-      
-      window.speechSynthesis.speak(uttr);
+      if (!text) return;
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`;
+      const audio = new Audio(url);
+      audio.play().catch(e => console.log("音声再生エラー:", e));
     }
 
     function getRandomItem(array) {
@@ -210,7 +193,6 @@
     }
 
     function startApp() {
-      speak("hello"); // 初回音声ロック解除用
       document.getElementById("startBtn").style.display = "none";
       isRunning = true;
       nextQuestion();
