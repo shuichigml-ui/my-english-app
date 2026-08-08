@@ -76,7 +76,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.0.9</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.0.91</div>
     <div id="secondary" class="secondary-text"></div>
     <div class="btn-group">
       <button id="startBtn" onclick="startApp()">学習を開始する</button>
@@ -97,7 +97,7 @@
       { en: "read", ja: "読む" },
       { en: "he", ja: "彼は" },
       { en: "see", ja: "見る、わかる" },
-      { en: "it", ja: "それは" },
+      { en: "it", ja: "色は" },
       { en: "mother", ja: "母" },
       { en: "name", ja: "名前" },
       { en: "like", ja: "好む" },
@@ -219,7 +219,7 @@
       }
     }
 
-    // アルファベットを1文字ずつ「0.5秒（500ms）」空けて読み上げ ➔ 0.5秒待ってから全体発音
+    // アルファベットを1文字ずつ0.5秒間隔で読み上げ ➔ 1.5秒待ってから全体発音
     function spellAndSpeak(word) {
       const cleanWord = word.replace(/[^a-zA-Z]/g, '');
       const letters = cleanWord.split('');
@@ -232,11 +232,11 @@
           const t = setTimeout(() => {
             speakLetter(letter);
 
-            // 最後の1文字を読み上げた後、さらに0.5秒待ってから全体の単語を発音
+            // 最後の1文字を読み上げた後、さらに1.5秒（1500ms）待ってから全体の単語を発音
             if (index === letters.length - 1) {
               const finalT = setTimeout(() => {
                 speakWord(word);
-              }, 500);
+              }, 1500);
               spellTimeouts.push(finalT);
             }
           }, index * 500);
@@ -318,7 +318,6 @@
         // パターン(2): 日 ➔ 英
         modeEl.textContent = "日 ➔ 英";
         primaryEl.textContent = item.ja;
-        // 7秒間の思考時間中は「単語を書いて」と表示
         secondaryEl.textContent = "単語を書いて";
 
         currentTimeout = setTimeout(() => {
