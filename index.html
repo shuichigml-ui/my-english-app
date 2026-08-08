@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>英単語学習アプリ Ver0.4</title>
+  <title>英単語学習アプリ</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -68,7 +68,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語) Ver0.5</div>
     <div id="secondary" class="secondary-text"></div>
     <button id="startBtn" onclick="startApp()">学習を開始する</button>
   </div>
@@ -179,14 +179,21 @@
 
     let currentTimeout = null;
     let isRunning = false;
-    // 使い回すAudio要素を事前生成
-    const audioPlayer = new Audio();
+    const synth = window.speechSynthesis;
 
+    // 音声を確実に発声させる関数
     function speak(text) {
-      if (!text) return;
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`;
-      audioPlayer.src = url;
-      audioPlayer.play().catch(e => console.log("再生エラー:", e));
+      if (!synth) return;
+      
+      // キューに入っている発音をキャンセル
+      synth.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9; // 読み上げスピード
+
+      // スマホ（Android Chrome）向けのバグ対策: 無音で停止する問題の回避
+      synth.speak(utterance);
     }
 
     function getRandomItem(array) {
@@ -194,18 +201,15 @@
     }
 
     function startApp() {
-      // ボタンタップのタイミングで空音声(ダミー)を再生し、スマホのオーディオ再生制限を解除する
-      audioPlayer.src = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-      audioPlayer.play().then(() => {
-        document.getElementById("startBtn").style.display = "none";
-        isRunning = true;
-        nextQuestion();
-      }).catch(e => {
-        // 解除失敗時も学習をスタート
-        document.getElementById("startBtn").style.display = "none";
-        isRunning = true;
-        nextQuestion();
-      });
+      // Androidのオーディオ制限を解除するため、ユーザーがボタンを押した直後に一回空読み上げを行う
+      if (synth) {
+        const dummyUtterance = new SpeechSynthesisUtterance("");
+        synth.speak(dummyUtterance);
+      }
+
+      document.getElementById("startBtn").style.display = "none";
+      isRunning = true;
+      nextQuestion();
     }
 
     function nextQuestion() {
