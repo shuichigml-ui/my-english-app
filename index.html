@@ -104,8 +104,8 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.0</div>
-    <div id="secondary" class="secondary-text"></div>
+    <div id="primary" class="primary-text">英単語アプリ (100語)</div>
+    <div id="secondary" class="secondary-text"></div>Ver.1.30
     
     <div id="optionArea">
       <div class="option-container">
@@ -136,7 +136,7 @@
       { en: "read", ja: "読む" },
       { en: "he", ja: "彼は" },
       { en: "see", ja: "見る、わかる" },
-      { en: "it", ja: "色は" },
+      { en: "it", ja: "それは" },
       { en: "mother", ja: "母" },
       { en: "name", ja: "名前" },
       { en: "like", ja: "好む" },
@@ -262,7 +262,7 @@
     }
 
     function speakWord(text, onEnded) {
-      playAudioWithFallback(text, onEnded);
+      playSingleAudio(text, onEnded);
     }
 
     function spellAndSpeak(word) {
@@ -311,24 +311,25 @@
       }
     }
 
-    function playAudioWithFallback(text, onEnded) {
+    // 重複再生を防ぐ単一音声再生ロジック
+    function playSingleAudio(text, onEnded) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
         utterance.rate = 0.9;
 
-        let spoken = false;
-        utterance.onstart = () => { spoken = true; };
         utterance.onend = () => {
           if (onEnded) onEnded();
         };
 
-        window.speechSynthesis.speak(utterance);
+        utterance.onerror = () => {
+          // ブラウザ標準音声でエラー時のみバックアップ音声を再生
+          playExternalAudio(text, onEnded);
+        };
 
-        setTimeout(() => {
-          if (!spoken) playExternalAudio(text, onEnded);
-        }, 300);
+        window.speechSynthesis.speak(utterance);
       } else {
         playExternalAudio(text, onEnded);
       }
@@ -377,7 +378,7 @@
       const modeEl = document.getElementById("mode");
 
       secondaryEl.textContent = "";
-      secondaryEl.className = "secondary-text"; // クラスのリセット
+      secondaryEl.className = "secondary-text";
 
       const item = getNextWord();
       const mode = Math.random() < 0.5 ? 1 : 2;
@@ -387,11 +388,11 @@
         modeEl.textContent = "英 ➔ 日";
         primaryEl.textContent = item.en;
         secondaryEl.textContent = "発音して";
-        secondaryEl.classList.add("text-red"); // 赤色で表示
+        secondaryEl.classList.add("text-red");
 
         currentTimeout = setTimeout(() => {
           secondaryEl.classList.remove("text-red");
-          secondaryEl.classList.add("text-blue"); // 青色で表示
+          secondaryEl.classList.add("text-blue");
           secondaryEl.textContent = item.ja;
 
           speakWord(item.en, () => {
@@ -404,11 +405,11 @@
         modeEl.textContent = "日 ➔ 英";
         primaryEl.textContent = item.ja;
         secondaryEl.textContent = "単語を書いて";
-        secondaryEl.classList.add("text-red"); // 赤色で表示
+        secondaryEl.classList.add("text-red");
 
         currentTimeout = setTimeout(() => {
           secondaryEl.classList.remove("text-red");
-          secondaryEl.classList.add("text-blue"); // 青色で表示
+          secondaryEl.classList.add("text-blue");
           secondaryEl.textContent = item.en;
           
           if (isSpellEnabled) {
