@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>英単語アプリ (100語)Ver.0.52</title>
+  <title>英単語学習アプリ（2026年夏休み宿題）Ver.0.62</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -35,7 +35,7 @@
       letter-spacing: 1px;
     }
     .primary-text {
-      font-size: 2.8rem;
+      font-size: 2.2rem;
       font-weight: bold;
       margin-bottom: 20px;
       line-height: 1.2;
@@ -104,8 +104,8 @@
       gap: 12px;
     }
     button {
-      padding: 12px 28px;
-      font-size: 1rem;
+      padding: 12px 36px;
+      font-size: 1.1rem;
       font-weight: bold;
       color: white;
       background-color: #007bff;
@@ -128,31 +128,31 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text color-black">英単語アプリ (100語)Ver.0.52</div>
+    <div id="primary" class="primary-text color-black">英単語学習アプリ（2026年夏休み宿題）Ver.0.62</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
       <div class="option-group">
-        <div><strong>言語選択:</strong></div>
+        <div id="lblLangSelect"><strong>言語選択:</strong></div>
         <label>
-          <input type="radio" name="langMode" value="ja" checked>
-          日本語 ⇔ 英語（英日・日英）
+          <input type="radio" name="langMode" value="ja" checked onchange="updateUIByLanguage()">
+          <span id="lblOptJa">日本語 ⇔ 英語（英日・日英）</span>
         </label>
         <label>
-          <input type="radio" name="langMode" value="zh-TW">
-          繁體中文 ⇔ 英語（台英・英台）
+          <input type="radio" name="langMode" value="zh-TW" onchange="updateUIByLanguage()">
+          <span id="lblOptTw">繁體中文 ⇔ 英語（台英・英台）</span>
         </label>
         <hr style="border: 0; border-top: 1px solid #ddd; width: 100%; margin: 5px 0;">
         <label>
           <input type="checkbox" id="spellCheckOption" checked>
-          綴り（スペル）の音声を確認する
+          <span id="lblSpellCheck">綴り（スペル）の音声を確認する</span>
         </label>
       </div>
-      <div class="notice-text">※ Android Chrome でのみ動作確認を行っています。</div>
+      <div id="noticeText" class="notice-text">※ Android Chrome でのみ動作確認を行っています。</div>
     </div>
 
     <div class="btn-group">
-      <button id="startBtn" onclick="startApp()">学習を開始する</button>
+      <button id="startBtn" onclick="startApp()">スタート</button>
       <button id="nextBtn" onclick="nextQuestion()" style="display: none;" disabled>次へ ➔</button>
     </div>
   </div>
@@ -264,9 +264,42 @@
 
     let currentTimeout = null;
     let isSpellEnabled = true;
-    let selectedLangMode = "ja"; // 'ja' (日本語) または 'zh-TW' (華語/繁体字)
+    let selectedLangMode = "ja";
     let wordQueue = [];
     let bestEnglishVoice = null;
+
+    // 言語選択ラジオボタンに応じたUIテキストの動的更新関数
+    function updateUIByLanguage() {
+      const radios = document.getElementsByName("langMode");
+      for (const radio of radios) {
+        if (radio.checked) {
+          selectedLangMode = radio.value;
+          break;
+        }
+      }
+
+      if (selectedLangMode === "zh-TW") {
+        document.getElementById("mode").textContent = "請按下開始按鈕";
+        document.getElementById("primary").textContent = "英文單字學習 App (100字)Ver.0.62";
+        document.getElementById("lblLangSelect").innerHTML = "<strong>語言選擇:</strong>";
+        document.getElementById("lblOptJa").textContent = "日文 ⇔ 英文（英日・日英）";
+        document.getElementById("lblOptTw").textContent = "繁體中文 ⇔ 英文（台英・英台）";
+        document.getElementById("lblSpellCheck").textContent = "確認拼音發音";
+        document.getElementById("noticeText").textContent = "※ 僅在 Android Chrome 環境下完成測試。";
+        document.getElementById("startBtn").textContent = "開始";
+        document.getElementById("nextBtn").textContent = "下一題 ➔";
+      } else {
+        document.getElementById("mode").textContent = "スタートボタンを押してください";
+        document.getElementById("primary").textContent = "英単語学習アプリ（2026年夏休み宿題）Ver.0.62";
+        document.getElementById("lblLangSelect").innerHTML = "<strong>言語選択:</strong>";
+        document.getElementById("lblOptJa").textContent = "日本語 ⇔ 英語（英日・日英）";
+        document.getElementById("lblOptTw").textContent = "繁體中文 ⇔ 英語（台英・英台）";
+        document.getElementById("lblSpellCheck").textContent = "綴り（スペル）の音声を確認する";
+        document.getElementById("noticeText").textContent = "※ Android Chrome でのみ動作確認を行っています。";
+        document.getElementById("startBtn").textContent = "スタート";
+        document.getElementById("nextBtn").textContent = "次へ ➔";
+      }
+    }
 
     function loadVoices() {
       if ('speechSynthesis' in window) {
@@ -408,16 +441,6 @@
 
     function startApp() {
       isSpellEnabled = document.getElementById("spellCheckOption").checked;
-      
-      // 選択された言語モードを取得
-      const radios = document.getElementsByName("langMode");
-      for (const radio of radios) {
-        if (radio.checked) {
-          selectedLangMode = radio.value;
-          break;
-        }
-      }
-
       loadVoices();
 
       if ('speechSynthesis' in window) {
@@ -445,7 +468,6 @@
       const item = getNextWord();
       const mode = Math.random() < 0.5 ? 1 : 2;
 
-      // 言語モードに応じた表示テキスト・指示文の切り替え
       const isZh = (selectedLangMode === "zh-TW");
       const nativeMeaning = isZh ? item.tw : item.ja;
       const speakInstruction = isZh ? "請發音" : "発音して";
