@@ -97,7 +97,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.1</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語)</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
@@ -129,7 +129,7 @@
       { en: "read", ja: "読む" },
       { en: "he", ja: "彼は" },
       { en: "see", ja: "見る、わかる" },
-      { en: "it", ja: "色は" },
+      { en: "it", ja: "それは" },
       { en: "mother", ja: "母" },
       { en: "name", ja: "名前" },
       { en: "like", ja: "好む" },
@@ -221,7 +221,6 @@
     ];
 
     let currentTimeout = null;
-    let spellTimeouts = [];
     let isSpellEnabled = true;
     let wordQueue = [];
 
@@ -250,8 +249,6 @@
         clearTimeout(currentTimeout);
         currentTimeout = null;
       }
-      spellTimeouts.forEach(t => clearTimeout(t));
-      spellTimeouts = [];
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
       }
@@ -261,38 +258,48 @@
       playAudioWithFallback(text, onEnded);
     }
 
-    function speakLetter(char) {
-      if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(char);
-        utterance.lang = 'en-US';
-        utterance.rate = 1.0;
-        window.speechSynthesis.speak(utterance);
-      }
-    }
-
+    // 1文字ずつの読み上げを順番に同期制御（onendイベントを利用）
     function spellAndSpeak(word) {
       const cleanWord = word.replace(/[^a-zA-Z]/g, '');
       const letters = cleanWord.split('');
 
-      if ('speechSynthesis' in window) {
+      if ('speechSynthesis' in window && letters.length > 0) {
         window.speechSynthesis.cancel();
 
-        letters.forEach((letter, index) => {
-          const t = setTimeout(() => {
-            speakLetter(letter);
+        let index = 0;
 
-            if (index === letters.length - 1) {
-              const finalT = setTimeout(() => {
-                speakWord(word, () => {
-                  setNextBtnEnabled(true);
-                });
-              }, 1500);
-              spellTimeouts.push(finalT);
-            }
-          }, index * 500);
+        function speakNextLetter() {
+          if (index < letters.length) {
+            const letter = letters[index];
+            index++;
 
-          spellTimeouts.push(t);
-        });
+            const utterance = new SpeechSynthesisUtterance(letter);
+            utterance.lang = 'en-US';
+            utterance.rate = 1.0;
+
+            // 読み上げが終わったタイミングで次の文字へ（文字間を0.1秒ほど確保）
+            utterance.onend = () => {
+              currentTimeout = setTimeout(speakNextLetter, 100);
+            };
+
+            // エラー時も安全に進行
+            utterance.onerror = () => {
+              currentTimeout = setTimeout(speakNextLetter, 100);
+            };
+
+            window.speechSynthesis.speak(utterance);
+
+          } else {
+            // 全ての文字の読み上げが「完全終了」した時点から 1.5秒（1500ms）待って単語全体を発声
+            currentTimeout = setTimeout(() => {
+              speakWord(word, () => {
+                setNextBtnEnabled(true);
+              });
+            }, 1500);
+          }
+        }
+
+        speakNextLetter();
 
       } else {
         speakWord(word, () => {
@@ -360,7 +367,7 @@
 
     function nextQuestion() {
       clearAllTimers();
-      setNextBtnEnabled(false); // 音声が完了するまで「次へ」を非活性化
+      setNextBtnEnabled(false);
 
       const primaryEl = document.getElementById("primary");
       const secondaryEl = document.getElementById("secondary");
@@ -378,7 +385,7 @@
 
         currentTimeout = setTimeout(() => {
           speakWord(item.en, () => {
-            setNextBtnEnabled(true); // 発音完了で有効化
+            setNextBtnEnabled(true);
           });
           secondaryEl.textContent = item.ja;
         }, 2000);
@@ -396,7 +403,7 @@
             spellAndSpeak(item.en);
           } else {
             speakWord(item.en, () => {
-              setNextBtnEnabled(true); // 発音完了で有効化
+              setNextBtnEnabled(true);
             });
           }
         }, 7000);
