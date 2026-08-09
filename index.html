@@ -16,12 +16,12 @@
     }
     .card {
       background: white;
-      padding: 40px;
+      padding: 30px 25px;
       border-radius: 16px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       text-align: center;
       width: 360px;
-      min-height: 280px;
+      min-height: 300px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -34,12 +34,14 @@
       text-transform: uppercase;
       letter-spacing: 1px;
     }
+    /* 英単語・日本語の表示サイズを拡大 (2.2rem -> 2.8rem) */
     .primary-text {
-      font-size: 2.2rem;
+      font-size: 2.8rem;
       font-weight: bold;
       color: #333;
       margin-bottom: 20px;
       line-height: 1.2;
+      word-break: break-word;
     }
     .secondary-text {
       font-size: 1.5rem;
@@ -104,7 +106,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.30</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.40</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
@@ -136,7 +138,7 @@
       { en: "read", ja: "読む" },
       { en: "he", ja: "彼は" },
       { en: "see", ja: "見る、わかる" },
-      { en: "it", ja: "それは" },
+      { en: "it", ja: "色は" },
       { en: "mother", ja: "母" },
       { en: "name", ja: "名前" },
       { en: "like", ja: "好む" },
@@ -230,6 +232,24 @@
     let currentTimeout = null;
     let isSpellEnabled = true;
     let wordQueue = [];
+    let bestEnglishVoice = null;
+
+    // 高品質（ナチュラル）な英語ボイスを自動抽出するロジック
+    function loadVoices() {
+      if ('speechSynthesis' in window) {
+        const voices = window.speechSynthesis.getVoices();
+        // 優先順位: Googleのナチュラル音声 ➔ その他英語ボイス
+        bestEnglishVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) ||
+                           voices.find(v => v.lang.startsWith('en') && v.name.includes('Natural')) ||
+                           voices.find(v => v.lang === 'en-US') ||
+                           voices.find(v => v.lang.startsWith('en'));
+      }
+    }
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
 
     function shuffle(array) {
       const copy = [...array];
@@ -282,6 +302,7 @@
             const utterance = new SpeechSynthesisUtterance(letter);
             utterance.lang = 'en-US';
             utterance.rate = 1.0;
+            if (bestEnglishVoice) utterance.voice = bestEnglishVoice;
 
             utterance.onend = () => {
               currentTimeout = setTimeout(speakNextLetter, 100);
@@ -311,7 +332,6 @@
       }
     }
 
-    // 重複再生を防ぐ単一音声再生ロジック
     function playSingleAudio(text, onEnded) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -319,13 +339,13 @@
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
         utterance.rate = 0.9;
+        if (bestEnglishVoice) utterance.voice = bestEnglishVoice;
 
         utterance.onend = () => {
           if (onEnded) onEnded();
         };
 
         utterance.onerror = () => {
-          // ブラウザ標準音声でエラー時のみバックアップ音声を再生
           playExternalAudio(text, onEnded);
         };
 
@@ -356,6 +376,7 @@
 
     function startApp() {
       isSpellEnabled = document.getElementById("spellCheckOption").checked;
+      loadVoices();
 
       if ('speechSynthesis' in window) {
         window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
@@ -404,7 +425,7 @@
         // パターン(2): 日 ➔ 英
         modeEl.textContent = "日 ➔ 英";
         primaryEl.textContent = item.ja;
-        secondaryEl.textContent = "単語を書いて";
+        secondaryEl.textContent = "英語の綴りを書いて"; // ご要望通り文言変更
         secondaryEl.classList.add("text-red");
 
         currentTimeout = setTimeout(() => {
