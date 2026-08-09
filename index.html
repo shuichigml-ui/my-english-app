@@ -29,16 +29,14 @@
     }
     .mode-label {
       font-size: 0.85rem;
-      color: #888;
+      color: #555;
       margin-bottom: 12px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
-    /* 英単語・日本語の表示サイズを拡大 (2.2rem -> 2.8rem) */
     .primary-text {
       font-size: 2.8rem;
       font-weight: bold;
-      color: #333;
       margin-bottom: 20px;
       line-height: 1.2;
       word-break: break-word;
@@ -48,14 +46,19 @@
       min-height: 2.2rem;
       line-height: 1.2;
     }
-    /* 文字色のクラス定義 */
-    .text-red {
-      color: #d9534f;
+    
+    /* 色分け用クラス */
+    .color-blue {
+      color: #007bff !important; /* 英単語：青 */
+    }
+    .color-red {
+      color: #d9534f !important; /* 指示：赤 */
       font-weight: bold;
     }
-    .text-blue {
-      color: #007bff;
+    .color-black {
+      color: #222222 !important; /* それ以外（日本語の意味等）：黒 */
     }
+
     .notice-text {
       font-size: 0.8rem;
       color: #d9534f;
@@ -65,7 +68,7 @@
     .option-container {
       margin-top: 15px;
       font-size: 0.95rem;
-      color: #555;
+      color: #222;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -106,7 +109,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.40</div>
+    <div id="primary" class="primary-text color-black">英単語アプリ (100語)Ver.1.41</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
@@ -234,11 +237,9 @@
     let wordQueue = [];
     let bestEnglishVoice = null;
 
-    // 高品質（ナチュラル）な英語ボイスを自動抽出するロジック
     function loadVoices() {
       if ('speechSynthesis' in window) {
         const voices = window.speechSynthesis.getVoices();
-        // 優先順位: Googleのナチュラル音声 ➔ その他英語ボイス
         bestEnglishVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')) ||
                            voices.find(v => v.lang.startsWith('en') && v.name.includes('Natural')) ||
                            voices.find(v => v.lang === 'en-US') ||
@@ -399,7 +400,6 @@
       const modeEl = document.getElementById("mode");
 
       secondaryEl.textContent = "";
-      secondaryEl.className = "secondary-text";
 
       const item = getNextWord();
       const mode = Math.random() < 0.5 ? 1 : 2;
@@ -407,14 +407,19 @@
       if (mode === 1) {
         // パターン(1): 英 ➔ 日
         modeEl.textContent = "英 ➔ 日";
+        
+        // 英単語表示：青色
         primaryEl.textContent = item.en;
+        primaryEl.className = "primary-text color-blue";
+
+        // 指示文言：赤色
         secondaryEl.textContent = "発音して";
-        secondaryEl.classList.add("text-red");
+        secondaryEl.className = "secondary-text color-red";
 
         currentTimeout = setTimeout(() => {
-          secondaryEl.classList.remove("text-red");
-          secondaryEl.classList.add("text-blue");
+          // 日本語意味表示：黒色
           secondaryEl.textContent = item.ja;
+          secondaryEl.className = "secondary-text color-black";
 
           speakWord(item.en, () => {
             setNextBtnEnabled(true);
@@ -424,14 +429,19 @@
       } else {
         // パターン(2): 日 ➔ 英
         modeEl.textContent = "日 ➔ 英";
+
+        // 日本語の意味表示：黒色
         primaryEl.textContent = item.ja;
-        secondaryEl.textContent = "英語の綴りを書いて"; // ご要望通り文言変更
-        secondaryEl.classList.add("text-red");
+        primaryEl.className = "primary-text color-black";
+
+        // 指示文言：赤色
+        secondaryEl.textContent = "英語の綴りを書いて";
+        secondaryEl.className = "secondary-text color-red";
 
         currentTimeout = setTimeout(() => {
-          secondaryEl.classList.remove("text-red");
-          secondaryEl.classList.add("text-blue");
+          // 英単語表示：青色
           secondaryEl.textContent = item.en;
+          secondaryEl.className = "secondary-text color-blue";
           
           if (isSpellEnabled) {
             spellAndSpeak(item.en);
