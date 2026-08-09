@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>英単語アプリ (100語)Ver.0.42</title>
+  <title>英単語アプリ (100語)Ver.0.52</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -48,7 +48,7 @@
       word-break: break-word;
     }
 
-    /* 「日 ➔ 英」モード時の英単語拡大表示用クラス */
+    /* 「解答表示時」の英単語拡大クラス */
     .secondary-text.large-word {
       font-size: 2.8rem;
       font-weight: bold;
@@ -63,7 +63,7 @@
       font-weight: bold;
     }
     .color-black {
-      color: #222222 !important; /* それ以外（日本語の意味等）：黒 */
+      color: #222222 !important; /* それ以外（日本語・繁体字の意味等）：黒 */
     }
 
     .notice-text {
@@ -72,16 +72,28 @@
       margin-top: 15px;
       line-height: 1.4;
     }
-    .option-container {
+    .option-group {
       margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: left;
       font-size: 0.95rem;
       color: #222;
+      width: 100%;
+      background: #f8f9fa;
+      padding: 12px 15px;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+    .option-group label {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
+      gap: 8px;
+      cursor: pointer;
     }
-    .option-container input[type="checkbox"] {
+    .option-group input[type="checkbox"],
+    .option-group input[type="radio"] {
       width: 18px;
       height: 18px;
       cursor: pointer;
@@ -116,11 +128,21 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text color-black">英単語アプリ (100語)Ver.0.42</div>
+    <div id="primary" class="primary-text color-black">英単語アプリ (100語)Ver.0.52</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
-      <div class="option-container">
+      <div class="option-group">
+        <div><strong>言語選択:</strong></div>
+        <label>
+          <input type="radio" name="langMode" value="ja" checked>
+          日本語 ⇔ 英語（英日・日英）
+        </label>
+        <label>
+          <input type="radio" name="langMode" value="zh-TW">
+          繁體中文 ⇔ 英語（台英・英台）
+        </label>
+        <hr style="border: 0; border-top: 1px solid #ddd; width: 100%; margin: 5px 0;">
         <label>
           <input type="checkbox" id="spellCheckOption" checked>
           綴り（スペル）の音声を確認する
@@ -136,111 +158,113 @@
   </div>
 
   <script>
+    // 100語の単語リスト（日本語および繁体字を保持）
     const wordList = [
-      { en: "one", ja: "1つの、1人の" },
-      { en: "the", ja: "その" },
-      { en: "you", ja: "あなたは" },
-      { en: "my", ja: "私の" },
-      { en: "father", ja: "父" },
-      { en: "do", ja: "する" },
-      { en: "your", ja: "あなたの" },
-      { en: "in", ja: "中に" },
-      { en: "read", ja: "読む" },
-      { en: "he", ja: "彼は" },
-      { en: "see", ja: "見る、わかる" },
-      { en: "it", ja: "それは" },
-      { en: "mother", ja: "母" },
-      { en: "name", ja: "名前" },
-      { en: "like", ja: "好む" },
-      { en: "how", ja: "どのぐらい" },
-      { en: "school", ja: "学校" },
-      { en: "January", ja: "1月" },
-      { en: "all", ja: "全部、全員、全て、みな" },
-      { en: "old", ja: "古い" },
-      { en: "fruit", ja: "果物" },
-      { en: "speak", ja: "話す" },
-      { en: "where", ja: "どこに" },
-      { en: "long", ja: "長い" },
-      { en: "study", ja: "勉強する" },
-      { en: "chair", ja: "いす" },
-      { en: "very", ja: "非常に" },
-      { en: "I", ja: "私は" },
-      { en: "our", ja: "私たちの" },
-      { en: "year", ja: "年" },
-      { en: "when", ja: "いつ" },
-      { en: "a lot of", ja: "たくさんの" },
-      { en: "nice", ja: "良い" },
-      { en: "sing", ja: "歌う" },
-      { en: "fine", ja: "元気な" },
-      { en: "right", ja: "右" },
-      { en: "want", ja: "欲しい" },
-      { en: "red", ja: "赤い" },
-      { en: "much", ja: "たくさん" },
-      { en: "here", ja: "ここに" },
-      { en: "July", ja: "7月" },
-      { en: "cold", ja: "冷たい" },
-      { en: "write", ja: "書く、手紙を書く" },
-      { en: "station", ja: "駅" },
-      { en: "color", ja: "色" },
-      { en: "this", ja: "この" },
-      { en: "she", ja: "彼女は" },
-      { en: "look", ja: "見る" },
-      { en: "many", ja: "多くの" },
-      { en: "two", ja: "2" },
-      { en: "teacher", ja: "先生" },
-      { en: "morning", ja: "朝" },
-      { en: "use", ja: "使う" },
-      { en: "run", ja: "走る" },
-      { en: "hungry", ja: "空腹の" },
-      { en: "fish", ja: "魚" },
-      { en: "lunch", ja: "昼食" },
-      { en: "have", ja: "持っている" },
-      { en: "eat", ja: "食べる" },
-      { en: "know", ja: "知っている" },
-      { en: "usually", ja: "普通は" },
-      { en: "season", ja: "季節" },
-      { en: "book", ja: "本" },
-      { en: "winter", ja: "冬" },
-      { en: "stop", ja: "止める" },
-      { en: "three", ja: "3" },
-      { en: "pencil", ja: "鉛筆" },
-      { en: "please", ja: "どうぞ" },
-      { en: "wall", ja: "壁" },
-      { en: "meet", ja: "会う" },
-      { en: "May", ja: "5月" },
-      { en: "ride", ja: "乗る" },
-      { en: "six", ja: "6" },
-      { en: "always", ja: "いつも" },
-      { en: "drink", ja: "飲む" },
-      { en: "four", ja: "4" },
-      { en: "sister", ja: "姉妹" },
-      { en: "hospital", ja: "病院" },
-      { en: "park", ja: "公園" },
-      { en: "baseball", ja: "野球" },
-      { en: "wash", ja: "洗う" },
-      { en: "cake", ja: "ケーキ" },
-      { en: "bag", ja: "カバン" },
-      { en: "Tuesday", ja: "火曜日" },
-      { en: "try", ja: "試す" },
-      { en: "cook", ja: "料理する" },
-      { en: "watch", ja: "見る" },
-      { en: "nurse", ja: "看護婦" },
-      { en: "five", ja: "5" },
-      { en: "seventeen", ja: "17" },
-      { en: "table", ja: "つくえ" },
-      { en: "place", ja: "場所" },
-      { en: "cup", ja: "カップ" },
-      { en: "green", ja: "緑" },
-      { en: "we", ja: "私たちは" },
-      { en: "fifty", ja: "50" },
-      { en: "eleven", ja: "11" },
-      { en: "picture", ja: "絵、写真" },
-      { en: "happy", ja: "幸福な" },
-      { en: "Thursday", ja: "木曜日" }
+      { en: "one", ja: "1つの、1人の", tw: "一個、一人" },
+      { en: "the", ja: "その", tw: "那個" },
+      { en: "you", ja: "あなたは", tw: "你、你們" },
+      { en: "my", ja: "私の", tw: "我的" },
+      { en: "father", ja: "父", tw: "父親" },
+      { en: "do", ja: "する", tw: "做" },
+      { en: "your", ja: "あなたの", tw: "你的、你們的" },
+      { en: "in", ja: "中に", tw: "在...裡面" },
+      { en: "read", ja: "読む", tw: "閱讀" },
+      { en: "he", ja: "彼は", tw: "他" },
+      { en: "see", ja: "見る、わかる", tw: "看見、明白" },
+      { en: "it", ja: "それは", tw: "它" },
+      { en: "mother", ja: "母", tw: "母親" },
+      { en: "name", ja: "名前", tw: "名字" },
+      { en: "like", ja: "好む", tw: "喜歡" },
+      { en: "how", ja: "どのぐらい", tw: "如何、多少" },
+      { en: "school", ja: "学校", tw: "學校" },
+      { en: "January", ja: "1月", tw: "一月" },
+      { en: "all", ja: "全部、全員、全て、みな", tw: "全部、大家" },
+      { en: "old", ja: "古い", tw: "老的、舊的" },
+      { en: "fruit", ja: "果物", tw: "水果" },
+      { en: "speak", ja: "話す", tw: "說話" },
+      { en: "where", ja: "どこに", tw: "在哪裡" },
+      { en: "long", ja: "長い", tw: "長的" },
+      { en: "study", ja: "勉強する", tw: "學習、讀書" },
+      { en: "chair", ja: "いす", tw: "椅子" },
+      { en: "very", ja: "非常に", tw: "非常" },
+      { en: "I", ja: "私は", tw: "我" },
+      { en: "our", ja: "私たちの", tw: "我們的" },
+      { en: "year", ja: "年", tw: "年" },
+      { en: "when", ja: "いつ", tw: "什麼時候" },
+      { en: "a lot of", ja: "たくさんの", tw: "許多的" },
+      { en: "nice", ja: "良い", tw: "好的、美好的" },
+      { en: "sing", ja: "歌う", tw: "唱歌" },
+      { en: "fine", ja: "元気な", tw: "良好的、健康的" },
+      { en: "right", ja: "右", tw: "右邊、正確的" },
+      { en: "want", ja: "欲しい", tw: "想要" },
+      { en: "red", ja: "赤い", tw: "紅色的" },
+      { en: "much", ja: "たくさん", tw: "許多" },
+      { en: "here", ja: "ここに", tw: "這裡" },
+      { en: "July", ja: "7月", tw: "七月" },
+      { en: "cold", ja: "冷たい", tw: "寒冷的、冷的" },
+      { en: "write", ja: "書く、手紙を書く", tw: "寫字、寫信" },
+      { en: "station", ja: "駅", tw: "車站" },
+      { en: "color", ja: "色", tw: "顏色" },
+      { en: "this", ja: "この", tw: "這個" },
+      { en: "she", ja: "彼女は", tw: "她" },
+      { en: "look", ja: "見る", tw: "看" },
+      { en: "many", ja: "多くの", tw: "許多的" },
+      { en: "two", ja: "2", tw: "二" },
+      { en: "teacher", ja: "先生", tw: "老師" },
+      { en: "morning", ja: "朝", tw: "早上" },
+      { en: "use", ja: "使う", tw: "使用" },
+      { en: "run", ja: "走る", tw: "跑步" },
+      { en: "hungry", ja: "空腹の", tw: "飢餓的" },
+      { en: "fish", ja: "魚", tw: "魚" },
+      { en: "lunch", ja: "昼食", tw: "午餐" },
+      { en: "have", ja: "持っている", tw: "有、擁有" },
+      { en: "eat", ja: "食べる", tw: "吃" },
+      { en: "know", ja: "知っている", tw: "知道、認識" },
+      { en: "usually", ja: "普通は", tw: "通常" },
+      { en: "season", ja: "季節", tw: "季節" },
+      { en: "book", ja: "本", tw: "書本" },
+      { en: "winter", ja: "冬", tw: "冬天" },
+      { en: "stop", ja: "止める", tw: "停止" },
+      { en: "three", ja: "3", tw: "三" },
+      { en: "pencil", ja: "鉛筆", tw: "鉛筆" },
+      { en: "please", ja: "どうぞ", tw: "請" },
+      { en: "wall", ja: "壁", tw: "牆壁" },
+      { en: "meet", ja: "会う", tw: "見面" },
+      { en: "May", ja: "5月", tw: "五月" },
+      { en: "ride", ja: "乗る", tw: "騎、乘" },
+      { en: "six", ja: "6", tw: "六" },
+      { en: "always", ja: "いつも", tw: "總是" },
+      { en: "drink", ja: "飲む", tw: "喝" },
+      { en: "four", ja: "4", tw: "四" },
+      { en: "sister", ja: "姉妹", tw: "姐妹" },
+      { en: "hospital", ja: "病院", tw: "醫院" },
+      { en: "park", ja: "公園", tw: "公園" },
+      { en: "baseball", ja: "野球", tw: "棒球" },
+      { en: "wash", ja: "洗う", tw: "洗" },
+      { en: "cake", ja: "ケーキ", tw: "蛋糕" },
+      { en: "bag", ja: "カバン", tw: "包包" },
+      { en: "Tuesday", ja: "火曜日", tw: "星期二" },
+      { en: "try", ja: "試す", tw: "嘗試" },
+      { en: "cook", ja: "料理する", tw: "烹調、做飯" },
+      { en: "watch", ja: "見る", tw: "觀看" },
+      { en: "nurse", ja: "看護婦", tw: "護士" },
+      { en: "five", ja: "5", tw: "五" },
+      { en: "seventeen", ja: "17", tw: "十七" },
+      { en: "table", ja: "つくえ", tw: "桌子" },
+      { en: "place", ja: "場所", tw: "地方、場所" },
+      { en: "cup", ja: "カップ", tw: "杯子" },
+      { en: "green", ja: "緑", tw: "綠色" },
+      { en: "we", ja: "私たちは", tw: "我們" },
+      { en: "fifty", ja: "50", tw: "五十" },
+      { en: "eleven", ja: "11", tw: "十一" },
+      { en: "picture", ja: "絵、写真", tw: "圖片、照片" },
+      { en: "happy", ja: "幸福な", tw: "快樂的" },
+      { en: "Thursday", ja: "木曜日", tw: "星期四" }
     ];
 
     let currentTimeout = null;
     let isSpellEnabled = true;
+    let selectedLangMode = "ja"; // 'ja' (日本語) または 'zh-TW' (華語/繁体字)
     let wordQueue = [];
     let bestEnglishVoice = null;
 
@@ -384,6 +408,16 @@
 
     function startApp() {
       isSpellEnabled = document.getElementById("spellCheckOption").checked;
+      
+      // 選択された言語モードを取得
+      const radios = document.getElementsByName("langMode");
+      for (const radio of radios) {
+        if (radio.checked) {
+          selectedLangMode = radio.value;
+          break;
+        }
+      }
+
       loadVoices();
 
       if ('speechSynthesis' in window) {
@@ -411,21 +445,29 @@
       const item = getNextWord();
       const mode = Math.random() < 0.5 ? 1 : 2;
 
+      // 言語モードに応じた表示テキスト・指示文の切り替え
+      const isZh = (selectedLangMode === "zh-TW");
+      const nativeMeaning = isZh ? item.tw : item.ja;
+      const speakInstruction = isZh ? "請發音" : "発音して";
+      const writeInstruction = isZh ? "請寫出英文拼字" : "英語の綴りを書いて";
+      const label1 = isZh ? "英 ➔ 台" : "英 ➔ 日";
+      const label2 = isZh ? "台 ➔ 英" : "日 ➔ 英";
+
       if (mode === 1) {
-        // パターン(1): 英 ➔ 日
-        modeEl.textContent = "英 ➔ 日";
+        // パターン(1): 英 ➔ 母国語
+        modeEl.textContent = label1;
         
         // 英単語表示（上部）：青色（大）
         primaryEl.textContent = item.en;
         primaryEl.className = "primary-text color-blue";
 
         // 指示文言（下部）：赤色（通常サイズ）
-        secondaryEl.textContent = "発音して";
+        secondaryEl.textContent = speakInstruction;
         secondaryEl.className = "secondary-text color-red";
 
         currentTimeout = setTimeout(() => {
-          // 日本語意味表示（下部）：黒色（通常サイズ）
-          secondaryEl.textContent = item.ja;
+          // 母国語の意味表示（下部）：黒色（通常サイズ）
+          secondaryEl.textContent = nativeMeaning;
           secondaryEl.className = "secondary-text color-black";
 
           speakWord(item.en, () => {
@@ -434,15 +476,15 @@
         }, 2000);
 
       } else {
-        // パターン(2): 日 ➔ 英
-        modeEl.textContent = "日 ➔ 英";
+        // パターン(2): 母国語 ➔ 英
+        modeEl.textContent = label2;
 
-        // 日本語の意味表示（上部）：黒色（大）
-        primaryEl.textContent = item.ja;
+        // 母国語の意味表示（上部）：黒色（大）
+        primaryEl.textContent = nativeMeaning;
         primaryEl.className = "primary-text color-black";
 
         // 指示文言（下部）：赤色（通常サイズ）
-        secondaryEl.textContent = "英語の綴りを書いて";
+        secondaryEl.textContent = writeInstruction;
         secondaryEl.className = "secondary-text color-red";
 
         currentTimeout = setTimeout(() => {
