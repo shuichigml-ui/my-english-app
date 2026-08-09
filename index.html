@@ -97,7 +97,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.11</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.12</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
@@ -129,7 +129,7 @@
       { en: "read", ja: "読む" },
       { en: "he", ja: "彼は" },
       { en: "see", ja: "見る、わかる" },
-      { en: "it", ja: "それは" },
+      { en: "it", ja: "色は" },
       { en: "mother", ja: "母" },
       { en: "name", ja: "名前" },
       { en: "like", ja: "好む" },
@@ -258,7 +258,6 @@
       playAudioWithFallback(text, onEnded);
     }
 
-    // 1文字ずつの読み上げを順番に同期制御（onendイベントを利用）
     function spellAndSpeak(word) {
       const cleanWord = word.replace(/[^a-zA-Z]/g, '');
       const letters = cleanWord.split('');
@@ -277,12 +276,10 @@
             utterance.lang = 'en-US';
             utterance.rate = 1.0;
 
-            // 読み上げが終わったタイミングで次の文字へ（文字間を0.1秒ほど確保）
             utterance.onend = () => {
               currentTimeout = setTimeout(speakNextLetter, 100);
             };
 
-            // エラー時も安全に進行
             utterance.onerror = () => {
               currentTimeout = setTimeout(speakNextLetter, 100);
             };
@@ -290,7 +287,6 @@
             window.speechSynthesis.speak(utterance);
 
           } else {
-            // 全ての文字の読み上げが「完全終了」した時点から 1.5秒（1500ms）待って単語全体を発声
             currentTimeout = setTimeout(() => {
               speakWord(word, () => {
                 setNextBtnEnabled(true);
@@ -382,6 +378,7 @@
         // パターン(1): 英 ➔ 日
         modeEl.textContent = "英 ➔ 日";
         primaryEl.textContent = item.en;
+        secondaryEl.textContent = "発音して"; // 2秒間の案内表示
 
         currentTimeout = setTimeout(() => {
           speakWord(item.en, () => {
@@ -394,7 +391,7 @@
         // パターン(2): 日 ➔ 英
         modeEl.textContent = "日 ➔ 英";
         primaryEl.textContent = item.ja;
-        secondaryEl.textContent = "単語を書いて";
+        secondaryEl.textContent = "単語を書いて"; // 7秒間の案内表示
 
         currentTimeout = setTimeout(() => {
           secondaryEl.textContent = item.en;
