@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>英単語学習アプリ（2026年夏休み宿題）Ver.0.63</title>
+  <title>英単語学習アプリ（2026年夏休み宿題）Ver.0.73</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -26,6 +26,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      position: relative;
     }
     .mode-label {
       font-size: 0.85rem;
@@ -122,13 +123,25 @@
       color: #888;
       cursor: not-allowed;
     }
+
+    /* スタートへ戻るリンク */
+    .back-home-link {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #6c757d;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .back-home-link:hover {
+      color: #343a40;
+    }
   </style>
 </head>
 <body>
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text color-black">英単語学習アプリ（2026年夏休み宿題）Ver.0.63</div>
+    <div id="primary" class="primary-text color-black">英単語学習アプリ（2026年夏休み宿題）Ver.0.73</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
@@ -154,6 +167,11 @@
     <div class="btn-group">
       <button id="startBtn" onclick="startApp()">スタート</button>
       <button id="nextBtn" onclick="nextQuestion()" style="display: none;" disabled>次へ ➔</button>
+    </div>
+
+    <!-- 最下部リンク -->
+    <div id="backHomeBtn" class="back-home-link" style="display: none;" onclick="resetToHome()">
+      スタートへ戻る
     </div>
   </div>
 
@@ -279,7 +297,7 @@
 
       if (selectedLangMode === "zh-TW") {
         document.getElementById("mode").textContent = "請按下開始按鈕";
-        document.getElementById("primary").textContent = "英文單字學習 App (100字)Ver.0.63";
+        document.getElementById("primary").textContent = "英文單字學習 App (100字)Ver.0.73";
         document.getElementById("lblLangSelect").innerHTML = "<strong>語言選擇:</strong>";
         document.getElementById("lblOptJa").textContent = "日文 ⇔ 英文（英日・日英）";
         document.getElementById("lblOptTw").textContent = "繁體中文 ⇔ 英文（台英・英台）";
@@ -287,9 +305,10 @@
         document.getElementById("noticeText").textContent = "※ 僅在 Android Chrome 環境下完成測試。";
         document.getElementById("startBtn").textContent = "開始";
         document.getElementById("nextBtn").textContent = "下一題 ➔";
+        document.getElementById("backHomeBtn").textContent = "返回首頁";
       } else {
         document.getElementById("mode").textContent = "スタートボタンを押してください";
-        document.getElementById("primary").textContent = "英単語学習アプリ（2026年夏休み宿題）Ver.0.63";
+        document.getElementById("primary").textContent = "英単語学習アプリ（2026年夏休み宿題）Ver.0.73";
         document.getElementById("lblLangSelect").innerHTML = "<strong>言語選択:</strong>";
         document.getElementById("lblOptJa").textContent = "日本語 ⇔ 英語（英日・日英）";
         document.getElementById("lblOptTw").textContent = "繁體中文 ⇔ 英語（台英・英台）";
@@ -297,6 +316,7 @@
         document.getElementById("noticeText").textContent = "※ Android Chrome でのみ動作確認を行っています。";
         document.getElementById("startBtn").textContent = "スタート";
         document.getElementById("nextBtn").textContent = "次へ ➔";
+        document.getElementById("backHomeBtn").textContent = "スタートへ戻る";
       }
     }
 
@@ -449,9 +469,23 @@
       document.getElementById("startBtn").style.display = "none";
       document.getElementById("optionArea").style.display = "none";
       document.getElementById("nextBtn").style.display = "inline-block";
+      document.getElementById("backHomeBtn").style.display = "block";
       
       wordQueue = shuffle(wordList);
       nextQuestion();
+    }
+
+    // スタート画面に戻る関数
+    function resetToHome() {
+      clearAllTimers();
+
+      document.getElementById("startBtn").style.display = "inline-block";
+      document.getElementById("optionArea").style.display = "block";
+      document.getElementById("nextBtn").style.display = "none";
+      document.getElementById("backHomeBtn").style.display = "none";
+
+      document.getElementById("secondary").textContent = "";
+      updateUIByLanguage();
     }
 
     function nextQuestion() {
