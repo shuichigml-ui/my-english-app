@@ -43,9 +43,16 @@
     }
     .secondary-text {
       font-size: 1.5rem;
-      color: #007bff;
       min-height: 2.2rem;
       line-height: 1.2;
+    }
+    /* 文字色のクラス定義 */
+    .text-red {
+      color: #d9534f;
+      font-weight: bold;
+    }
+    .text-blue {
+      color: #007bff;
     }
     .notice-text {
       font-size: 0.8rem;
@@ -97,7 +104,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.12</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語)</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
@@ -370,6 +377,7 @@
       const modeEl = document.getElementById("mode");
 
       secondaryEl.textContent = "";
+      secondaryEl.className = "secondary-text"; // クラスのリセット
 
       const item = getNextWord();
       const mode = Math.random() < 0.5 ? 1 : 2;
@@ -378,22 +386,29 @@
         // パターン(1): 英 ➔ 日
         modeEl.textContent = "英 ➔ 日";
         primaryEl.textContent = item.en;
-        secondaryEl.textContent = "発音して"; // 2秒間の案内表示
+        secondaryEl.textContent = "発音して";
+        secondaryEl.classList.add("text-red"); // 赤色で表示
 
         currentTimeout = setTimeout(() => {
+          secondaryEl.classList.remove("text-red");
+          secondaryEl.classList.add("text-blue"); // 青色で表示
+          secondaryEl.textContent = item.ja;
+
           speakWord(item.en, () => {
             setNextBtnEnabled(true);
           });
-          secondaryEl.textContent = item.ja;
         }, 2000);
 
       } else {
         // パターン(2): 日 ➔ 英
         modeEl.textContent = "日 ➔ 英";
         primaryEl.textContent = item.ja;
-        secondaryEl.textContent = "単語を書いて"; // 7秒間の案内表示
+        secondaryEl.textContent = "単語を書いて";
+        secondaryEl.classList.add("text-red"); // 赤色で表示
 
         currentTimeout = setTimeout(() => {
+          secondaryEl.classList.remove("text-red");
+          secondaryEl.classList.add("text-blue"); // 青色で表示
           secondaryEl.textContent = item.en;
           
           if (isSpellEnabled) {
