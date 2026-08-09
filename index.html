@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>英単語学習アプリ（2026年夏休み宿題）Ver.0.73</title>
+  <title>英単語学習アプリ（2026年夏休み宿題）Ver.0.74</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -124,7 +124,7 @@
       cursor: not-allowed;
     }
 
-    /* スタートへ戻るリンク */
+    /* スタート画面に戻るリンク */
     .back-home-link {
       margin-top: 20px;
       font-size: 0.9rem;
@@ -141,7 +141,7 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text color-black">英単語学習アプリ（2026年夏休み宿題）Ver.0.73</div>
+    <div id="primary" class="primary-text color-black">英単語学習アプリ（2026年夏休み宿題）Ver.0.74</div>
     <div id="secondary" class="secondary-text"></div>
     
     <div id="optionArea">
@@ -171,7 +171,7 @@
 
     <!-- 最下部リンク -->
     <div id="backHomeBtn" class="back-home-link" style="display: none;" onclick="resetToHome()">
-      スタートへ戻る
+      スタート画面に戻る
     </div>
   </div>
 
@@ -201,7 +201,7 @@
       { en: "fruit", ja: "果物", tw: "水果" },
       { en: "speak", ja: "話す", tw: "說話" },
       { en: "where", ja: "どこに", tw: "在哪裡" },
-      { en: "long", ja: "長い", tw: "長的" },
+      { en: "long", ja: "長い", tw: "長の" },
       { en: "study", ja: "勉強する", tw: "學習、讀書" },
       { en: "chair", ja: "いす", tw: "椅子" },
       { en: "very", ja: "非常に", tw: "非常" },
@@ -297,7 +297,7 @@
 
       if (selectedLangMode === "zh-TW") {
         document.getElementById("mode").textContent = "請按下開始按鈕";
-        document.getElementById("primary").textContent = "英文單字學習 App (100字)Ver.0.73";
+        document.getElementById("primary").textContent = "英文單字學習 App (100字)Ver.0.74";
         document.getElementById("lblLangSelect").innerHTML = "<strong>語言選擇:</strong>";
         document.getElementById("lblOptJa").textContent = "日文 ⇔ 英文（英日・日英）";
         document.getElementById("lblOptTw").textContent = "繁體中文 ⇔ 英文（台英・英台）";
@@ -308,7 +308,7 @@
         document.getElementById("backHomeBtn").textContent = "返回首頁";
       } else {
         document.getElementById("mode").textContent = "スタートボタンを押してください";
-        document.getElementById("primary").textContent = "英単語学習アプリ（2026年夏休み宿題）Ver.0.73";
+        document.getElementById("primary").textContent = "英単語学習アプリ（2026年夏休み宿題）Ver.0.74";
         document.getElementById("lblLangSelect").innerHTML = "<strong>言語選択:</strong>";
         document.getElementById("lblOptJa").textContent = "日本語 ⇔ 英語（英日・日英）";
         document.getElementById("lblOptTw").textContent = "繁體中文 ⇔ 英語（台英・英台）";
@@ -316,7 +316,7 @@
         document.getElementById("noticeText").textContent = "※ Android Chrome でのみ動作確認を行っています。";
         document.getElementById("startBtn").textContent = "スタート";
         document.getElementById("nextBtn").textContent = "次へ ➔";
-        document.getElementById("backHomeBtn").textContent = "スタートへ戻る";
+        document.getElementById("backHomeBtn").textContent = "スタート画面に戻る";
       }
     }
 
@@ -475,7 +475,6 @@
       nextQuestion();
     }
 
-    // スタート画面に戻る関数
     function resetToHome() {
       clearAllTimers();
 
