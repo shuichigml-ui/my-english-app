@@ -47,6 +47,12 @@
       min-height: 2.2rem;
       line-height: 1.2;
     }
+    .notice-text {
+      font-size: 0.8rem;
+      color: #d9534f;
+      margin-top: 15px;
+      line-height: 1.4;
+    }
     .option-container {
       margin-top: 15px;
       font-size: 0.95rem;
@@ -82,6 +88,7 @@
     }
     button:disabled {
       background-color: #ccc;
+      color: #888;
       cursor: not-allowed;
     }
   </style>
@@ -90,19 +97,22 @@
 
   <div class="card">
     <div id="mode" class="mode-label">スタートボタンを押してください</div>
-    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.0</div>
+    <div id="primary" class="primary-text">英単語アプリ (100語)Ver.1.1</div>
     <div id="secondary" class="secondary-text"></div>
     
-    <div id="optionArea" class="option-container">
-      <label>
-        <input type="checkbox" id="spellCheckOption" checked>
-        綴り（スペル）の音声を確認する
-      </label>
+    <div id="optionArea">
+      <div class="option-container">
+        <label>
+          <input type="checkbox" id="spellCheckOption" checked>
+          綴り（スペル）の音声を確認する
+        </label>
+      </div>
+      <div class="notice-text">※ Android Chrome でのみ動作確認を行っています。</div>
     </div>
 
     <div class="btn-group">
       <button id="startBtn" onclick="startApp()">学習を開始する</button>
-      <button id="nextBtn" onclick="nextQuestion()" style="display: none;">次へ ➔</button>
+      <button id="nextBtn" onclick="nextQuestion()" style="display: none;" disabled>次へ ➔</button>
     </div>
   </div>
 
@@ -119,7 +129,7 @@
       { en: "read", ja: "読む" },
       { en: "he", ja: "彼は" },
       { en: "see", ja: "見る、わかる" },
-      { en: "it", ja: "それは" },
+      { en: "it", ja: "色は" },
       { en: "mother", ja: "母" },
       { en: "name", ja: "名前" },
       { en: "like", ja: "好む" },
@@ -213,8 +223,28 @@
     let currentTimeout = null;
     let spellTimeouts = [];
     let isSpellEnabled = true;
+    let wordQueue = [];
 
-    // タイマーと音声のクリア処理
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function getNextWord() {
+      if (wordQueue.length === 0) {
+        wordQueue = shuffle(wordList);
+      }
+      return wordQueue.pop();
+    }
+
+    function setNextBtnEnabled(enabled) {
+      document.getElementById("nextBtn").disabled = !enabled;
+    }
+
     function clearAllTimers() {
       if (currentTimeout) {
         clearTimeout(currentTimeout);
@@ -227,12 +257,10 @@
       }
     }
 
-    // 単語全体の発音再生
-    function speakWord(text) {
-      playAudioWithFallback(text);
+    function speakWord(text, onEnded) {
+      playAudioWithFallback(text, onEnded);
     }
 
-    // アルファベット1文字の発声用関数
     function speakLetter(char) {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(char);
@@ -242,7 +270,6 @@
       }
     }
 
-    // アルファベットを1文字ずつ0.5秒間隔で読み上げ ➔ 1.5秒待ってから全体発音
     function spellAndSpeak(word) {
       const cleanWord = word.replace(/[^a-zA-Z]/g, '');
       const letters = cleanWord.split('');
@@ -254,10 +281,11 @@
           const t = setTimeout(() => {
             speakLetter(letter);
 
-            // 最後の文字を読み上げた後、さらに1.5秒待って全体の単語を発音
             if (index === letters.length - 1) {
               const finalT = setTimeout(() => {
-                speakWord(word);
+                speakWord(word, () => {
+                  setNextBtnEnabled(true);
+                });
               }, 1500);
               spellTimeouts.push(finalT);
             }
@@ -267,12 +295,13 @@
         });
 
       } else {
-        speakWord(word);
+        speakWord(word, () => {
+          setNextBtnEnabled(true);
+        });
       }
     }
 
-    // フォールバック付き音声再生
-    function playAudioWithFallback(text) {
+    function playAudioWithFallback(text, onEnded) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -281,31 +310,40 @@
 
         let spoken = false;
         utterance.onstart = () => { spoken = true; };
+        utterance.onend = () => {
+          if (onEnded) onEnded();
+        };
+
         window.speechSynthesis.speak(utterance);
 
         setTimeout(() => {
-          if (!spoken) playExternalAudio(text);
+          if (!spoken) playExternalAudio(text, onEnded);
         }, 300);
       } else {
-        playExternalAudio(text);
+        playExternalAudio(text, onEnded);
       }
     }
 
-    function playExternalAudio(text) {
+    function playExternalAudio(text, onEnded) {
       const fallbackUrl = `https://ssl.gstatic.com/dictionary/static/sounds/20200429/${encodeURIComponent(text.toLowerCase())}--_us_1.mp3`;
       const audio = new Audio(fallbackUrl);
+      
+      audio.onended = () => {
+        if (onEnded) onEnded();
+      };
+
       audio.play().catch(e => {
         const audio2 = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&type=2`);
-        audio2.play().catch(() => console.log("再生不可"));
+        audio2.onended = () => {
+          if (onEnded) onEnded();
+        };
+        audio2.play().catch(() => {
+          if (onEnded) onEnded();
+        });
       });
     }
 
-    function getRandomItem(array) {
-      return array[Math.floor(Math.random() * array.length)];
-    }
-
     function startApp() {
-      // スタート時点のチェックボックスの状態を記録
       isSpellEnabled = document.getElementById("spellCheckOption").checked;
 
       if ('speechSynthesis' in window) {
@@ -315,11 +353,14 @@
       document.getElementById("startBtn").style.display = "none";
       document.getElementById("optionArea").style.display = "none";
       document.getElementById("nextBtn").style.display = "inline-block";
+      
+      wordQueue = shuffle(wordList);
       nextQuestion();
     }
 
     function nextQuestion() {
       clearAllTimers();
+      setNextBtnEnabled(false); // 音声が完了するまで「次へ」を非活性化
 
       const primaryEl = document.getElementById("primary");
       const secondaryEl = document.getElementById("secondary");
@@ -327,7 +368,7 @@
 
       secondaryEl.textContent = "";
 
-      const item = getRandomItem(wordList);
+      const item = getNextWord();
       const mode = Math.random() < 0.5 ? 1 : 2;
 
       if (mode === 1) {
@@ -336,7 +377,9 @@
         primaryEl.textContent = item.en;
 
         currentTimeout = setTimeout(() => {
-          speakWord(item.en);
+          speakWord(item.en, () => {
+            setNextBtnEnabled(true); // 発音完了で有効化
+          });
           secondaryEl.textContent = item.ja;
         }, 2000);
 
@@ -349,11 +392,12 @@
         currentTimeout = setTimeout(() => {
           secondaryEl.textContent = item.en;
           
-          // チェックの有無によってスペル読み上げあり／なしを切り替え
           if (isSpellEnabled) {
             spellAndSpeak(item.en);
           } else {
-            speakWord(item.en);
+            speakWord(item.en, () => {
+              setNextBtnEnabled(true); // 発音完了で有効化
+            });
           }
         }, 7000);
       }
